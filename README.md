@@ -1,1 +1,8 @@
-# AI_studty_notes
+# AI
+## Technologies
+
+## Resources
+
+## Creators
+
+## Links
