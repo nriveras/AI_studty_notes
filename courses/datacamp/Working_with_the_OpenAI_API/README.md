@@ -73,6 +73,137 @@ response = client.chat.completions.create(
 + this is important because it determines the price of the ussage. 
     + input and output have different cost.
 ```python
-input_tokens = response.usage.promt_tokens
+input_tokens = response.usage.prompt_tokens
 output_tokens = "...defined by us before..."
 ```
+
+## Text generation
+
++ response of the model is not deterministic (inherently random)
++ randomes is not always desirable. 
+    + This can be tweek with the parameter `temperature`
+    + ranges from `0` (highly deterministic) to `2` (very random)
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role":"user", "content":"Life is like a box of chocolates."}],
+    temperature=2
+)
+
+print(response.choices[0].message.content)
+```
+
++ Other common uses are marketing or product description:
+``` python
+"""Generate a powerful tagline for a new electric vehicle
+that highlights innovation and sustainability."""
+
+"""Write a compelling product description for the UltraFit Smartwatch.
+Highlight its key features: 10-day battery life, 24/7 heart rate and sleep tracking, built-in GPS, water resistance up to 50 meters, and lightweight design.
+Use a persuasive and engaging tone to appeal to fitness enthusiasts and busy professionals.
+"""
+```
+
+## Shot prompting
+ + Providing examples to get more accurate responses
+    + zero-shot: no example, just instructions.
+    + one-shot: one example guides the response.
+    + few-shot: multiple examples provide more context.
++ when giving more examples, the consistancy and formatting tends to improve.
+    ```python
+    prompt = """Classify sentiment as 1-5 (bad-good) in the following statements:
+    1. The service was very slow -> 1
+    2. The steak was awfully good! -> 5
+    3. It was ok, no massive complaints. -> 3
+    4. Meal was decent, but I've had better. ->
+    5. My food was delayed, but drinks were good. ->
+    """
+    ```
+    ```
+    1. The service was very slow -> 1
+    2. The steak was awfully good! -> 5
+    3. It was ok, no massive complaints. -> 3
+    4. Meal was decent, but I've had better. -> 4
+    5. My food was delayed, but drinks were good. -> 3
+    ```
+
+## Chat roles and system messages
+
++ single-turn task:
+    + text generation
+    + text transformation
+    + classification
+    ![alt text](<Resources/img/Screenshot 2025-06-19 at 11.44.49.png>)
++ Multi-turn conversations:
+    + build on previous prompts and responses
+    ![alt text](<Resources/img/Screenshot 2025-06-19 at 11.45.24.png>)
++ Roles:
+    + system: controls assistant's behavior.
+    + user: instruct the assistant
+    + assitant: response to oser instruction
+        + can also be written by the developer to provide examples.
+    ```python
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", 
+            "content": "You are a Python programming tutor who speaks concisely."},
+            {"role": "user",
+            "content": "How do you define a Python list?"},
+            {"role": "assistant",
+            "content": "Lists are defined by enclosing a comma-separated sequence of objects inside square brackets [ ]."},
+            {"role": "user",
+            "content": "What is the difference between mutable and immutable objects?"}
+            ]
+    )
+    ```
+
++ mitigating misuse
+    ```python
+    sys_msg = """
+    You are finance education assistant that helps students study for exams.
+    
+    If you are asked for specific, real-world financial advice with risk to their finances, respond with:
+    
+    I'm sorry, I am not allowed to provide financial advice.
+    """
+
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages= [{"role": "system",
+                    "content": sys_msg},
+                   {"role": "user",
+                    "content": "Which stocks should I invest in?"}])
+
+    print(response.choices[0].message.content)
+    ```
+    ```
+    I'm sorry, I am not allowed to provide financial advice.
+    ```
+## Utilizing the assistant role
+
++ example conversation should be included in the assistant role.
++ examples of formatting sholuld be included in the system role
++ examples that are context required should be included in the user role (often single-turn). 
+
+## Multi-turn conversations with GPT
+
+    ```python
+    messages = [{"role": "system",
+                "content": "You are a data science tutor who provides short, simple explanations."}]
+    user_qs = ["Why is Python so popular?", "Summarize this in one sentence."]
+
+    for q in user_qs:
+        print("User: ", q)
+        user_dict = {"role": "user", "content": q}
+        messages.append(user_dict)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages
+        )
+
+        assistant_dict = {"role": "assistant", "content": response.choices[0].message.content}
+        messages.append(assistant_dict)
+        print("Assistant: ", response.choices[0].message.content, "\n")
+    ```
