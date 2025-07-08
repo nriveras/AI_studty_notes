@@ -98,3 +98,65 @@ plt.show()
 
 + Similar articles are grouped together!
 + Model captured the semantic meaning
+
+```python
+# Set your API key
+client = OpenAI(api_key="<OPENAI_API_TOKEN>")
+
+# Extract a list of product short descriptions from products
+product_descriptions = [product['short_description'] for product in products]
+
+# Create embeddings for each product description
+response = client.embeddings.create(
+  model="text-embedding-ada-002",
+  input=product_descriptions
+)
+response_dict = response.model_dump()
+
+# Extract the embeddings from response_dict and store in products
+for i, product in enumerate(products):
+    product['embedding'] = response_dict['data'][i]['embedding']
+    
+print(products[0].items())
+```
+
+## Text similarity
+
++ semantically similar text are embedded more closely in a vector space.
++ measuring distance allows to measure similarity
++ enables embeddings applications as semantic search, recommendations or classification.
++ there are several metrics to measure similarity
+
+```python
+from scipy.spatial import distance
+
+distance.cosine([0, 1], [1, 0])
+```
++ cosine distance ranges from 0 to 2 and smaller values = greater similarity
+
+```python
+# to create embeding in a more consistant way lets use a function
+def create_embeddings(texts):
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=texts
+    )
+    response_dict = response.model_dump()
+
+    return [data['embedding'] for data in response_dict['data']]
+
+from scipy.spatial import distance
+import numpy as np
+
+search_text = "computer"
+search_embedding = create_embeddings(search_text)[0]
+
+distances = []
+
+for article in articles:
+    dist = distance.cosine(search_embedding, article["embedding"])
+    distances.append(dist)
+
+min_dist_ind = np.argmin(distances)
+print(articles[min_dist_ind]['headline'])
+```
